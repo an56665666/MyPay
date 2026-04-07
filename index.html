@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#ea580c">
+  <title>MyPay 分帳系統</title>
+  <style>
+    :root {
+      --primary: #ea580c;
+      --primary-hover: #c2410c;
+      --primary-light: #fff7ed;
+      --primary-lighter: #ffedd5;
+      --primary-subtle: rgba(234,88,12,0.12);
+      --accent: #d97706;
+      --accent-light: #fffbeb;
+      --danger: #dc2626;
+      --danger-hover: #b91c1c;
+      --danger-light: #fef2f2;
+      --success: #16a34a;
+      --success-light: #f0fdf4;
+      --warm-50: #fffbf7;
+      --warm-100: #fef5ee;
+      --warm-200: #fde4cd;
+      --gray-50: #fafaf9;
+      --gray-100: #f5f5f4;
+      --gray-200: #e7e5e4;
+      --gray-300: #d6d3d1;
+      --gray-400: #a8a29e;
+      --gray-500: #78716c;
+      --gray-600: #57534e;
+      --gray-700: #44403c;
+      --gray-800: #292524;
+      --gray-900: #1c1917;
+      --radius: 14px;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+      background: var(--warm-100);
+      color: var(--gray-800);
+      line-height: 1.6;
+      min-height: 100vh;
+      min-height: 100dvh;
+      padding-bottom: calc(72px + var(--safe-bottom));
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      background: linear-gradient(135deg, #ea580c 0%, #d97706 50%, #ca8a04 100%);
+      color: white;
+      padding: 20px 20px 16px;
+      text-align: center;
+    }
+    header h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.5px; }
+    header p { font-size: 0.82rem; opacity: 0.85; margin-top: 2px; }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1px solid var(--gray-200);
+      display: flex;
+      z-index: 200;
+      padding-bottom: var(--safe-bottom);
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.06);
+    }
+    .nav-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      padding: 10px 4px 8px;
+      border: none;
+      background: transparent;
+      color: var(--gray-400);
+      font-size: 0.7rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: color 0.2s;
+      position: relative;
+    }
+    .nav-btn .nav-icon { font-size: 1.35rem; line-height: 1; }
+    .nav-btn.active { color: var(--primary); }
+    .nav-btn.active::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 25%;
+      right: 25%;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 0 0 3px 3px;
+    }
+    .nav-badge {
+      position: absolute;
+      top: 4px;
+      right: calc(50% - 20px);
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 9px;
+      background: var(--danger);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .container {
+      max-width: 520px;
+      margin: 0 auto;
+      padding: 16px 14px 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 14px;
+    }
+    .card-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--gray-800);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card-title .icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.05rem;
+      flex-shrink: 0;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    input, select {
+      padding: 12px 14px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 10px;
+      font-size: 16px;
+      font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+      background: white;
+      color: var(--gray-800);
+      -webkit-appearance: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px var(--primary-subtle);
+    }
+    input::placeholder { color: var(--gray-400); }
+
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2378716c' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+
+    .btn {
+      padding: 12px 22px;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      white-space: nowrap;
+      min-height: 46px;
+      -webkit-appearance: none;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:active { background: var(--primary-hover); }
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+    .btn-danger:active { background: var(--danger-hover); }
+    .btn-sm {
+      padding: 8px 14px;
+      font-size: 0.85rem;
+      border-radius: 8px;
+      min-height: 38px;
+    }
+    .btn-outline {
+      background: white;
+      color: var(--gray-600);
+      border: 1.5px solid var(--gray-200);
+    }
+    .btn-outline:active { background: var(--gray-100); }
+    .btn-block {
+      width: 100%;
+    }
+
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 8px 14px;
+      border-radius: 22px;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+    .tag .remove-btn {
+      cursor: pointer;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.7rem;
+      background: var(--primary-subtle);
+      transition: background 0.2s;
+      border: none;
+      color: var(--primary);
+      line-height: 1;
+    }
+    .tag .remove-btn:active { background: rgba(234,88,12,0.25); }
+
+    .members-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      min-height: 40px;
+    }
+
+    .empty-hint {
+      color: var(--gray-400);
+      font-size: 0.9rem;
+      padding: 16px 0;
+      text-align: center;
+      width: 100%;
+    }
+
+    .expense-item {
+      background: white;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 16px;
+      margin-bottom: 10px;
+      position: relative;
+    }
+    .expense-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 8px;
+    }
+    .expense-title-row {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .expense-amount {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+    .expense-desc {
+      font-weight: 600;
+      color: var(--gray-800);
+      font-size: 1rem;
+    }
+    .expense-meta {
+      font-size: 0.8rem;
+      color: var(--gray-400);
+      margin-top: 2px;
+    }
+    .expense-participants {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 10px;
+    }
+    .expense-participants .mini-tag {
+      font-size: 0.78rem;
+      padding: 3px 10px;
+      border-radius: 12px;
+      background: var(--gray-100);
+      color: var(--gray-600);
+    }
+    .expense-participants .mini-tag.excluded {
+      background: var(--danger-light);
+      color: var(--danger);
+      text-decoration: line-through;
+    }
+
+    .checkbox-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border: 1.5px solid var(--gray-200);
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.92rem;
+      transition: all 0.15s;
+      user-select: none;
+      min-height: 44px;
+    }
+    .checkbox-label:active { background: var(--gray-50); }
+    .checkbox-label input { display: none; }
+    .checkbox-label.checked {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+      font-weight: 600;
+    }
+
+    .settlement-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 16px;
+      background: var(--warm-50);
+      border-radius: 12px;
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+    .settlement-arrow {
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 1.1rem;
+    }
+    .settlement-amount {
+      margin-left: auto;
+      font-weight: 800;
+      color: var(--danger);
+      font-size: 1.1rem;
+    }
+    .settlement-from, .settlement-to {
+      font-weight: 700;
+    }
+    .settlement-from { color: var(--danger); }
+    .settlement-to { color: var(--success); }
+
+    .balance-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+      font-size: 0.9rem;
+    }
+    .balance-bar .name { font-weight: 700; min-width: 56px; }
+    .balance-bar .bar-track {
+      flex: 1;
+      height: 10px;
+      background: var(--gray-100);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    .balance-bar .bar-fill {
+      height: 100%;
+      border-radius: 5px;
+      transition: width 0.5s ease;
+    }
+    .balance-bar .amount {
+      font-weight: 700;
+      min-width: 80px;
+      text-align: right;
+      font-size: 0.88rem;
+    }
+    .balance-positive .bar-fill { background: var(--success); }
+    .balance-negative .bar-fill { background: var(--danger); }
+    .balance-positive .amount { color: var(--success); }
+    .balance-negative .amount { color: var(--danger); }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--gray-500);
+      margin-bottom: 6px;
+    }
+    .form-group input, .form-group select {
+      width: 100%;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .actions-bar {
+      display: flex;
+      gap: 8px;
+      margin-top: 18px;
+    }
+
+    .divider {
+      height: 1px;
+      background: var(--gray-200);
+      margin: 16px 0;
+    }
+
+    .no-data {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--gray-400);
+    }
+    .no-data .icon-big { font-size: 2.8rem; margin-bottom: 12px; }
+    .no-data p { font-size: 0.95rem; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .total-banner {
+      background: linear-gradient(135deg, #ea580c 0%, #d97706 50%, #ca8a04 100%);
+      color: white;
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .total-banner .total-label { font-size: 0.82rem; opacity: 0.85; }
+    .total-banner .total-value { font-size: 1.8rem; font-weight: 800; }
+    .total-banner .total-count { font-size: 0.82rem; opacity: 0.7; }
+
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 14px 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-name { font-weight: 700; }
+    .detail-sub { font-size: 0.8rem; color: var(--gray-400); margin-top: 2px; }
+
+    .hint-text {
+      font-size: 0.78rem;
+      color: var(--gray-400);
+      margin-top: 10px;
+      text-align: center;
+    }
+
+    @media (min-width: 600px) {
+      .container { padding: 24px 20px 32px; }
+      header { padding: 28px 24px 22px; }
+      header h1 { font-size: 1.75rem; }
+      .card { padding: 24px; }
+      body { padding-bottom: calc(80px + var(--safe-bottom)); }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>MyPay</h1>
+  <p>旅行分帳，輕鬆搞定</p>
+</header>
+
+<div class="container">
+
+  <!-- 成員管理 -->
+  <div class="tab-content active" id="tab-members">
+    <div class="card">
+      <div class="card-title">
+        <span class="icon" style="background: var(--primary-lighter); color: var(--primary);">👥</span>
+        新增成員
+      </div>
+      <div class="input-row">
+        <input type="text" id="memberNameInput" placeholder="輸入成員名稱" style="flex:1"
+               onkeydown="if(event.key==='Enter') addMember()" enterkeyhint="done">
+        <button class="btn btn-primary" onclick="addMember()">新增</button>
+      </div>
+      <div class="divider"></div>
+      <div class="form-label">目前成員</div>
+      <div class="members-list" id="membersList">
+        <div class="empty-hint">尚未新增任何成員</div>
+      </div>
+      <div class="divider"></div>
+      <div class="actions-bar">
+        <button class="btn btn-outline btn-block" onclick="clearAll()" style="color:var(--danger);">清除所有資料</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 費用記錄 -->
+  <div class="tab-content" id="tab-expenses">
+    <div class="card">
+      <div class="card-title">
+        <span class="icon" style="background: var(--accent-light); color: var(--accent);">💰</span>
+        新增費用
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">費用名稱</label>
+          <input type="text" id="expenseDesc" placeholder="例：晚餐、門票" enterkeyhint="next">
+        </div>
+        <div class="form-group">
+          <label class="form-label">金額</label>
+          <input type="number" id="expenseAmount" placeholder="0" min="0" step="1" inputmode="numeric" enterkeyhint="done">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">付款人</label>
+        <select id="expensePayer"><option value="">請先新增成員</option></select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">排除的人（不需分攤此筆費用）</label>
+        <div class="checkbox-group" id="excludeGroup">
+          <span class="empty-hint" style="padding:4px 0">請先新增成員</span>
+        </div>
+      </div>
+      <div class="actions-bar">
+        <button class="btn btn-primary btn-block" onclick="addExpense()">新增費用</button>
+      </div>
+    </div>
+
+    <div id="expensesList"></div>
+  </div>
+
+  <!-- 結算 -->
+  <div class="tab-content" id="tab-settle">
+    <div id="settleContent">
+      <div class="no-data">
+        <div class="icon-big">📊</div>
+        <p>新增費用後即可查看結算結果</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<nav class="bottom-nav">
+  <button class="nav-btn active" onclick="switchTab('members')" data-tab="members">
+    <span class="nav-icon">👥</span>
+    成員
+  </button>
+  <button class="nav-btn" onclick="switchTab('expenses')" data-tab="expenses">
+    <span class="nav-icon">💰</span>
+    費用
+    <span class="nav-badge" id="expenseBadge" style="display:none"></span>
+  </button>
+  <button class="nav-btn" onclick="switchTab('settle')" data-tab="settle">
+    <span class="nav-icon">📊</span>
+    結算
+  </button>
+</nav>
+
+<script>
+  let members = [];
+  let expenses = [];
+
+  function switchTab(tab) {
+    document.querySelectorAll('.nav-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === tab);
+    });
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.getElementById('tab-' + tab).classList.add('active');
+    if (tab === 'settle') renderSettle();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function saveData() {
+    localStorage.setItem('mypay_members', JSON.stringify(members));
+    localStorage.setItem('mypay_expenses', JSON.stringify(expenses));
+  }
+
+  function loadData() {
+    try {
+      const m = localStorage.getItem('mypay_members');
+      const e = localStorage.getItem('mypay_expenses');
+      if (m) members = JSON.parse(m);
+      if (e) expenses = JSON.parse(e);
+    } catch (_) {}
+  }
+
+  function addMember() {
+    const input = document.getElementById('memberNameInput');
+    const name = input.value.trim();
+    if (!name) return;
+    if (members.includes(name)) {
+      alert('此成員已存在');
+      return;
+    }
+    members.push(name);
+    input.value = '';
+    input.focus();
+    renderMembers();
+    renderPayerSelect();
+    renderExcludeGroup();
+    saveData();
+  }
+
+  function removeMember(name) {
+    const used = expenses.some(e => e.payer === name);
+    if (used) {
+      if (!confirm(`「${name}」已有相關費用記錄，刪除後相關費用也會一併移除，確定嗎？`)) return;
+      expenses = expenses.filter(e => e.payer !== name);
+    }
+    expenses.forEach(e => {
+      e.excluded = e.excluded.filter(n => n !== name);
+    });
+    members = members.filter(m => m !== name);
+    renderMembers();
+    renderPayerSelect();
+    renderExcludeGroup();
+    renderExpenses();
+    saveData();
+  }
+
+  function renderMembers() {
+    const container = document.getElementById('membersList');
+    if (members.length === 0) {
+      container.innerHTML = '<div class="empty-hint">尚未新增任何成員</div>';
+      return;
+    }
+    container.innerHTML = members.map(name => `
+      <span class="tag">
+        ${esc(name)}
+        <button class="remove-btn" onclick="removeMember('${esc(name)}')" title="移除">✕</button>
+      </span>
+    `).join('');
+  }
+
+  function renderPayerSelect() {
+    const select = document.getElementById('expensePayer');
+    if (members.length === 0) {
+      select.innerHTML = '<option value="">請先新增成員</option>';
+      return;
+    }
+    select.innerHTML = members.map(name =>
+      `<option value="${esc(name)}">${esc(name)}</option>`
+    ).join('');
+  }
+
+  function renderExcludeGroup() {
+    const container = document.getElementById('excludeGroup');
+    if (members.length === 0) {
+      container.innerHTML = '<span class="empty-hint" style="padding:4px 0">請先新增成員</span>';
+      return;
+    }
+    container.innerHTML = members.map(name => `
+      <label class="checkbox-label" onclick="toggleExclude(this)">
+        <input type="checkbox" value="${esc(name)}">
+        ${esc(name)}
+      </label>
+    `).join('');
+  }
+
+  function toggleExclude(label) {
+    setTimeout(() => {
+      const cb = label.querySelector('input');
+      label.classList.toggle('checked', cb.checked);
+    }, 0);
+  }
+
+  function addExpense() {
+    if (members.length < 2) {
+      alert('請先新增至少兩位成員');
+      return;
+    }
+    const desc = document.getElementById('expenseDesc').value.trim();
+    const amount = parseFloat(document.getElementById('expenseAmount').value);
+    const payer = document.getElementById('expensePayer').value;
+
+    if (!desc) { alert('請輸入費用名稱'); return; }
+    if (!amount || amount <= 0) { alert('請輸入有效金額'); return; }
+    if (!payer) { alert('請選擇付款人'); return; }
+
+    const excluded = [];
+    document.querySelectorAll('#excludeGroup input:checked').forEach(cb => {
+      excluded.push(cb.value);
+    });
+
+    const participants = members.filter(m => !excluded.includes(m));
+    if (participants.length === 0) {
+      alert('至少需要一位成員參與分攤');
+      return;
+    }
+
+    expenses.push({
+      id: Date.now(),
+      desc,
+      amount,
+      payer,
+      excluded,
+      timestamp: new Date().toLocaleString('zh-TW')
+    });
+
+    document.getElementById('expenseDesc').value = '';
+    document.getElementById('expenseAmount').value = '';
+    document.querySelectorAll('#excludeGroup input').forEach(cb => {
+      cb.checked = false;
+      cb.parentElement.classList.remove('checked');
+    });
+
+    renderExpenses();
+    saveData();
+  }
+
+  function removeExpense(id) {
+    if (!confirm('確定要刪除這筆費用嗎？')) return;
+    expenses = expenses.filter(e => e.id !== id);
+    renderExpenses();
+    saveData();
+  }
+
+  function renderExpenses() {
+    const container = document.getElementById('expensesList');
+    const badge = document.getElementById('expenseBadge');
+
+    if (expenses.length > 0) {
+      badge.style.display = 'flex';
+      badge.textContent = expenses.length;
+    } else {
+      badge.style.display = 'none';
+    }
+
+    if (expenses.length === 0) {
+      container.innerHTML = `
+        <div class="card">
+          <div class="no-data">
+            <div class="icon-big">📝</div>
+            <p>尚未新增任何費用</p>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const total = expenses.reduce((s, e) => s + e.amount, 0);
+    container.innerHTML = `
+      <div class="total-banner">
+        <div>
+          <div class="total-label">費用總計</div>
+          <div class="total-value">$${formatNum(total)}</div>
+        </div>
+        <div class="total-count">共 ${expenses.length} 筆費用</div>
+      </div>
+      ${expenses.slice().reverse().map(e => {
+        return `
+          <div class="expense-item">
+            <div class="expense-header">
+              <div>
+                <div class="expense-title-row">
+                  <span class="expense-desc">${esc(e.desc)}</span>
+                  <span class="expense-amount">$${formatNum(e.amount)}</span>
+                </div>
+                <div class="expense-meta">${esc(e.payer)} 付款 · ${e.timestamp}</div>
+              </div>
+              <button class="btn btn-sm btn-outline" onclick="removeExpense(${e.id})" title="刪除">🗑</button>
+            </div>
+            <div class="expense-participants">
+              ${members.map(m =>
+                e.excluded.includes(m)
+                  ? `<span class="mini-tag excluded">${esc(m)}</span>`
+                  : `<span class="mini-tag">${esc(m)}</span>`
+              ).join('')}
+            </div>
+          </div>`;
+      }).join('')}
+    `;
+  }
+
+  function renderSettle() {
+    const container = document.getElementById('settleContent');
+
+    if (expenses.length === 0 || members.length < 2) {
+      container.innerHTML = `
+        <div class="no-data">
+          <div class="icon-big">📊</div>
+          <p>需要至少兩位成員與一筆費用才能結算</p>
+        </div>`;
+      return;
+    }
+
+    const balances = {};
+    members.forEach(m => balances[m] = 0);
+
+    expenses.forEach(e => {
+      const participants = members.filter(m => !e.excluded.includes(m));
+      if (participants.length === 0) return;
+      const share = e.amount / participants.length;
+      balances[e.payer] = (balances[e.payer] || 0) + e.amount;
+      participants.forEach(m => {
+        balances[m] = (balances[m] || 0) - share;
+      });
+    });
+
+    const totalExpense = expenses.reduce((s, e) => s + e.amount, 0);
+    const paidByPerson = {};
+    members.forEach(m => paidByPerson[m] = 0);
+    expenses.forEach(e => paidByPerson[e.payer] += e.amount);
+
+    const settlements = calculateSettlements(balances);
+    const maxAbs = Math.max(...members.map(m => Math.abs(balances[m])), 1);
+
+    container.innerHTML = `
+      <div class="total-banner">
+        <div>
+          <div class="total-label">費用總計</div>
+          <div class="total-value">$${formatNum(totalExpense)}</div>
+        </div>
+        <div class="total-count">${members.length} 位成員 · ${expenses.length} 筆費用</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span class="icon" style="background: var(--primary-lighter); color: var(--primary);">📊</span>
+          個人收支餘額
+        </div>
+        ${members.map(m => {
+          const bal = balances[m];
+          const pct = (Math.abs(bal) / maxAbs) * 100;
+          const isPos = bal >= 0;
+          return `
+            <div class="balance-bar ${isPos ? 'balance-positive' : 'balance-negative'}">
+              <span class="name">${esc(m)}</span>
+              <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
+              <span class="amount">${isPos ? '+' : ''}$${formatNum(bal)}</span>
+            </div>`;
+        }).join('')}
+        <div class="hint-text">正數 = 別人欠他錢 · 負數 = 需要付給別人</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span class="icon" style="background: var(--success-light); color: var(--success);">💸</span>
+          最終轉帳方案
+        </div>
+        ${settlements.length === 0
+          ? '<div class="empty-hint">所有人已結清，無需轉帳</div>'
+          : settlements.map(s => `
+            <div class="settlement-item">
+              <span class="settlement-from">${esc(s.from)}</span>
+              <span class="settlement-arrow">→</span>
+              <span class="settlement-to">${esc(s.to)}</span>
+              <span class="settlement-amount">$${formatNum(s.amount)}</span>
+            </div>
+          `).join('')
+        }
+        <div class="hint-text">已自動最佳化，減少不必要的轉帳次數</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span class="icon" style="background: var(--accent-light); color: var(--accent);">📋</span>
+          個人費用明細
+        </div>
+        ${members.map(m => {
+          const paid = paidByPerson[m];
+          const shouldPay = expenses.reduce((sum, e) => {
+            const parts = members.filter(p => !e.excluded.includes(p));
+            if (parts.includes(m)) sum += e.amount / parts.length;
+            return sum;
+          }, 0);
+          return `
+            <div class="detail-row">
+              <div>
+                <div class="detail-name">${esc(m)}</div>
+                <div class="detail-sub">已付 $${formatNum(paid)} · 應付 $${formatNum(shouldPay)}</div>
+              </div>
+              <div style="font-weight:800;font-size:1.05rem;color:${balances[m] >= 0 ? 'var(--success)' : 'var(--danger)'};">
+                ${balances[m] >= 0 ? '+' : ''}$${formatNum(balances[m])}
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+
+      <div class="actions-bar">
+        <button class="btn btn-outline btn-block" onclick="clearAll()">清除所有資料</button>
+      </div>
+    `;
+  }
+
+  function calculateSettlements(balances) {
+    const debtors = [];
+    const creditors = [];
+
+    Object.entries(balances).forEach(([name, bal]) => {
+      const rounded = Math.round(bal * 100) / 100;
+      if (rounded < -0.01) debtors.push({ name, amount: -rounded });
+      else if (rounded > 0.01) creditors.push({ name, amount: rounded });
+    });
+
+    debtors.sort((a, b) => b.amount - a.amount);
+    creditors.sort((a, b) => b.amount - a.amount);
+
+    const settlements = [];
+    let i = 0, j = 0;
+    while (i < debtors.length && j < creditors.length) {
+      const transfer = Math.min(debtors[i].amount, creditors[j].amount);
+      if (transfer > 0.01) {
+        settlements.push({
+          from: debtors[i].name,
+          to: creditors[j].name,
+          amount: Math.round(transfer * 100) / 100
+        });
+      }
+      debtors[i].amount -= transfer;
+      creditors[j].amount -= transfer;
+      if (debtors[i].amount < 0.01) i++;
+      if (creditors[j].amount < 0.01) j++;
+    }
+
+    return settlements;
+  }
+
+  function clearAll() {
+    if (!confirm('確定要清除所有資料嗎？此操作無法復原。')) return;
+    members = [];
+    expenses = [];
+    saveData();
+    renderMembers();
+    renderPayerSelect();
+    renderExcludeGroup();
+    renderExpenses();
+    switchTab('members');
+  }
+
+  function formatNum(n) {
+    return Number(n).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+  }
+
+  function esc(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  loadData();
+  renderMembers();
+  renderPayerSelect();
+  renderExcludeGroup();
+  renderExpenses();
+</script>
+
+</body>
+</html>
