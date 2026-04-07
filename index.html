@@ -486,6 +486,75 @@
       text-align: center;
     }
 
+    .split-toggle {
+      display: flex;
+      gap: 0;
+      background: var(--gray-100);
+      border-radius: 10px;
+      padding: 3px;
+      margin-bottom: 16px;
+    }
+    .split-toggle-btn {
+      flex: 1;
+      padding: 10px 12px;
+      border: none;
+      background: transparent;
+      border-radius: 8px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      color: var(--gray-400);
+      transition: all 0.2s;
+    }
+    .split-toggle-btn.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .custom-amount-list { margin-top: 8px; }
+    .custom-amount-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--gray-100);
+    }
+    .custom-amount-row:last-child { border-bottom: none; }
+    .custom-amount-row .ca-name {
+      font-weight: 600;
+      font-size: 0.92rem;
+      min-width: 56px;
+      flex-shrink: 0;
+    }
+    .custom-amount-row input {
+      flex: 1;
+      min-width: 0;
+    }
+    .custom-amount-total {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 14px;
+      background: var(--primary-light);
+      border-radius: 10px;
+      margin-top: 10px;
+      font-size: 0.9rem;
+    }
+    .custom-amount-total .ca-total-label { color: var(--gray-500); font-weight: 600; }
+    .custom-amount-total .ca-total-value { font-weight: 800; color: var(--primary); font-size: 1.1rem; }
+
+    .expense-detail-list { margin-top: 8px; }
+    .expense-detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 3px 0;
+      font-size: 0.82rem;
+      color: var(--gray-500);
+    }
+    .expense-detail-row .ed-amount { font-weight: 600; color: var(--gray-700); }
+
     @media (min-width: 600px) {
       .container { padding: 24px 20px 32px; }
       header { padding: 28px 24px 22px; }
@@ -535,26 +604,45 @@
         <span class="icon" style="background: var(--accent-light); color: var(--accent);">💰</span>
         新增費用
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">費用名稱</label>
-          <input type="text" id="expenseDesc" placeholder="例：晚餐、門票" enterkeyhint="next">
-        </div>
-        <div class="form-group">
-          <label class="form-label">金額</label>
-          <input type="number" id="expenseAmount" placeholder="0" min="0" step="1" inputmode="numeric" enterkeyhint="done">
-        </div>
+      <div class="form-group">
+        <label class="form-label">費用名稱</label>
+        <input type="text" id="expenseDesc" placeholder="例：晚餐、門票" enterkeyhint="next">
       </div>
       <div class="form-group">
         <label class="form-label">付款人</label>
         <select id="expensePayer"><option value="">請先新增成員</option></select>
       </div>
-      <div class="form-group">
-        <label class="form-label">排除的人（不需分攤此筆費用）</label>
-        <div class="checkbox-group" id="excludeGroup">
-          <span class="empty-hint" style="padding:4px 0">請先新增成員</span>
+
+      <div class="form-label">分帳方式</div>
+      <div class="split-toggle">
+        <button class="split-toggle-btn active" onclick="setSplitMode('equal')" data-mode="equal">均分</button>
+        <button class="split-toggle-btn" onclick="setSplitMode('custom')" data-mode="custom">自訂金額</button>
+      </div>
+
+      <div id="splitEqualArea">
+        <div class="form-group">
+          <label class="form-label">總金額</label>
+          <input type="number" id="expenseAmount" placeholder="0" min="0" step="1" inputmode="numeric" enterkeyhint="done">
+        </div>
+        <div class="form-group">
+          <label class="form-label">排除的人（不需分攤此筆費用）</label>
+          <div class="checkbox-group" id="excludeGroup">
+            <span class="empty-hint" style="padding:4px 0">請先新增成員</span>
+          </div>
         </div>
       </div>
+
+      <div id="splitCustomArea" style="display:none;">
+        <div class="form-label">各成員金額</div>
+        <div class="custom-amount-list" id="customAmountList">
+          <span class="empty-hint" style="padding:4px 0">請先新增成員</span>
+        </div>
+        <div class="custom-amount-total" id="customAmountTotal" style="display:none;">
+          <span class="ca-total-label">合計</span>
+          <span class="ca-total-value" id="customTotalValue">$0</span>
+        </div>
+      </div>
+
       <div class="actions-bar">
         <button class="btn btn-primary btn-block" onclick="addExpense()">新增費用</button>
       </div>
@@ -594,6 +682,7 @@
 <script>
   let members = [];
   let expenses = [];
+  let currentSplitMode = 'equal';
 
   function switchTab(tab) {
     document.querySelectorAll('.nav-btn').forEach(b => {
@@ -619,6 +708,44 @@
     } catch (_) {}
   }
 
+  function setSplitMode(mode) {
+    currentSplitMode = mode;
+    document.querySelectorAll('.split-toggle-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.mode === mode);
+    });
+    document.getElementById('splitEqualArea').style.display = mode === 'equal' ? 'block' : 'none';
+    document.getElementById('splitCustomArea').style.display = mode === 'custom' ? 'block' : 'none';
+    if (mode === 'custom') renderCustomAmounts();
+  }
+
+  function renderCustomAmounts() {
+    const container = document.getElementById('customAmountList');
+    const totalEl = document.getElementById('customAmountTotal');
+    if (members.length === 0) {
+      container.innerHTML = '<span class="empty-hint" style="padding:4px 0">請先新增成員</span>';
+      totalEl.style.display = 'none';
+      return;
+    }
+    totalEl.style.display = 'flex';
+    container.innerHTML = members.map(name => `
+      <div class="custom-amount-row">
+        <span class="ca-name">${esc(name)}</span>
+        <input type="number" placeholder="0" min="0" step="1" inputmode="numeric"
+               data-member="${esc(name)}" oninput="updateCustomTotal()" enterkeyhint="next">
+      </div>
+    `).join('');
+    updateCustomTotal();
+  }
+
+  function updateCustomTotal() {
+    let total = 0;
+    document.querySelectorAll('#customAmountList input').forEach(input => {
+      const val = parseFloat(input.value);
+      if (val > 0) total += val;
+    });
+    document.getElementById('customTotalValue').textContent = '$' + formatNum(total);
+  }
+
   function addMember() {
     const input = document.getElementById('memberNameInput');
     const name = input.value.trim();
@@ -633,6 +760,7 @@
     renderMembers();
     renderPayerSelect();
     renderExcludeGroup();
+    renderCustomAmounts();
     saveData();
   }
 
@@ -644,11 +772,13 @@
     }
     expenses.forEach(e => {
       e.excluded = e.excluded.filter(n => n !== name);
+      if (e.customAmounts) delete e.customAmounts[name];
     });
     members = members.filter(m => m !== name);
     renderMembers();
     renderPayerSelect();
     renderExcludeGroup();
+    renderCustomAmounts();
     renderExpenses();
     saveData();
   }
@@ -699,46 +829,82 @@
     }, 0);
   }
 
+  function getExpenseShare(e, memberName) {
+    if (e.splitMode === 'custom' && e.customAmounts) {
+      return e.customAmounts[memberName] || 0;
+    }
+    const parts = members.filter(p => !e.excluded.includes(p));
+    if (parts.includes(memberName)) return e.amount / parts.length;
+    return 0;
+  }
+
   function addExpense() {
     if (members.length < 2) {
       alert('請先新增至少兩位成員');
       return;
     }
     const desc = document.getElementById('expenseDesc').value.trim();
-    const amount = parseFloat(document.getElementById('expenseAmount').value);
     const payer = document.getElementById('expensePayer').value;
 
     if (!desc) { alert('請輸入費用名稱'); return; }
-    if (!amount || amount <= 0) { alert('請輸入有效金額'); return; }
     if (!payer) { alert('請選擇付款人'); return; }
 
-    const excluded = [];
-    document.querySelectorAll('#excludeGroup input:checked').forEach(cb => {
-      excluded.push(cb.value);
-    });
+    if (currentSplitMode === 'equal') {
+      const amount = parseFloat(document.getElementById('expenseAmount').value);
+      if (!amount || amount <= 0) { alert('請輸入有效金額'); return; }
 
-    const participants = members.filter(m => !excluded.includes(m));
-    if (participants.length === 0) {
-      alert('至少需要一位成員參與分攤');
-      return;
+      const excluded = [];
+      document.querySelectorAll('#excludeGroup input:checked').forEach(cb => {
+        excluded.push(cb.value);
+      });
+      const participants = members.filter(m => !excluded.includes(m));
+      if (participants.length === 0) { alert('至少需要一位成員參與分攤'); return; }
+
+      expenses.push({
+        id: Date.now(),
+        desc, amount, payer, excluded,
+        splitMode: 'equal',
+        timestamp: new Date().toLocaleString('zh-TW')
+      });
+
+      document.getElementById('expenseAmount').value = '';
+      document.querySelectorAll('#excludeGroup input').forEach(cb => {
+        cb.checked = false;
+        cb.parentElement.classList.remove('checked');
+      });
+
+    } else {
+      const customAmounts = {};
+      let total = 0;
+      let hasAny = false;
+      document.querySelectorAll('#customAmountList input').forEach(input => {
+        const name = input.dataset.member;
+        const val = parseFloat(input.value);
+        if (val > 0) {
+          customAmounts[name] = val;
+          total += val;
+          hasAny = true;
+        }
+      });
+      if (!hasAny || total <= 0) { alert('請至少填入一位成員的金額'); return; }
+
+      const excluded = members.filter(m => !customAmounts[m]);
+
+      expenses.push({
+        id: Date.now(),
+        desc, amount: total, payer, excluded,
+        splitMode: 'custom',
+        customAmounts,
+        timestamp: new Date().toLocaleString('zh-TW')
+      });
+
+      document.querySelectorAll('#customAmountList input').forEach(input => {
+        input.value = '';
+      });
+      updateCustomTotal();
     }
 
-    expenses.push({
-      id: Date.now(),
-      desc,
-      amount,
-      payer,
-      excluded,
-      timestamp: new Date().toLocaleString('zh-TW')
-    });
-
     document.getElementById('expenseDesc').value = '';
-    document.getElementById('expenseAmount').value = '';
-    document.querySelectorAll('#excludeGroup input').forEach(cb => {
-      cb.checked = false;
-      cb.parentElement.classList.remove('checked');
-    });
-
     renderExpenses();
     saveData();
   }
@@ -782,6 +948,31 @@
         <div class="total-count">共 ${expenses.length} 筆費用</div>
       </div>
       ${expenses.slice().reverse().map(e => {
+        const isCustom = e.splitMode === 'custom' && e.customAmounts;
+        const participants = members.filter(m => !e.excluded.includes(m));
+        let detailHtml = '';
+
+        if (isCustom) {
+          detailHtml = `<div class="expense-detail-list">
+            ${Object.entries(e.customAmounts).map(([name, amt]) =>
+              `<div class="expense-detail-row">
+                <span>${esc(name)}</span>
+                <span class="ed-amount">$${formatNum(amt)}</span>
+              </div>`
+            ).join('')}
+          </div>`;
+        } else {
+          const perPerson = participants.length > 0 ? e.amount / participants.length : 0;
+          detailHtml = `<div class="expense-participants">
+            ${members.map(m =>
+              e.excluded.includes(m)
+                ? `<span class="mini-tag excluded">${esc(m)}</span>`
+                : `<span class="mini-tag">${esc(m)} $${formatNum(perPerson)}</span>`
+            ).join('')}
+          </div>`;
+        }
+
+        const modeLabel = isCustom ? '自訂' : '均分';
         return `
           <div class="expense-item">
             <div class="expense-header">
@@ -790,17 +981,11 @@
                   <span class="expense-desc">${esc(e.desc)}</span>
                   <span class="expense-amount">$${formatNum(e.amount)}</span>
                 </div>
-                <div class="expense-meta">${esc(e.payer)} 付款 · ${e.timestamp}</div>
+                <div class="expense-meta">${esc(e.payer)} 付款 · ${modeLabel} · ${e.timestamp}</div>
               </div>
               <button class="btn btn-sm btn-outline" onclick="removeExpense(${e.id})" title="刪除">🗑</button>
             </div>
-            <div class="expense-participants">
-              ${members.map(m =>
-                e.excluded.includes(m)
-                  ? `<span class="mini-tag excluded">${esc(m)}</span>`
-                  : `<span class="mini-tag">${esc(m)}</span>`
-              ).join('')}
-            </div>
+            ${detailHtml}
           </div>`;
       }).join('')}
     `;
@@ -822,11 +1007,9 @@
     members.forEach(m => balances[m] = 0);
 
     expenses.forEach(e => {
-      const participants = members.filter(m => !e.excluded.includes(m));
-      if (participants.length === 0) return;
-      const share = e.amount / participants.length;
       balances[e.payer] = (balances[e.payer] || 0) + e.amount;
-      participants.forEach(m => {
+      members.forEach(m => {
+        const share = getExpenseShare(e, m);
         balances[m] = (balances[m] || 0) - share;
       });
     });
@@ -893,11 +1076,7 @@
         </div>
         ${members.map(m => {
           const paid = paidByPerson[m];
-          const shouldPay = expenses.reduce((sum, e) => {
-            const parts = members.filter(p => !e.excluded.includes(p));
-            if (parts.includes(m)) sum += e.amount / parts.length;
-            return sum;
-          }, 0);
+          const shouldPay = expenses.reduce((sum, e) => sum + getExpenseShare(e, m), 0);
           return `
             <div class="detail-row">
               <div>
@@ -958,7 +1137,9 @@
     renderMembers();
     renderPayerSelect();
     renderExcludeGroup();
+    renderCustomAmounts();
     renderExpenses();
+    setSplitMode('equal');
     switchTab('members');
   }
 
@@ -976,6 +1157,7 @@
   renderMembers();
   renderPayerSelect();
   renderExcludeGroup();
+  renderCustomAmounts();
   renderExpenses();
 </script>
 
