@@ -7,6 +7,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#a18072">
   <title>MyPay 分帳系統</title>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
   <style>
     :root {
       --primary: #a18072;
@@ -40,189 +42,76 @@
       --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
-
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
-      background: var(--warm-100);
-      color: var(--gray-800);
-      line-height: 1.6;
-      min-height: 100vh;
-      min-height: 100dvh;
-      -webkit-font-smoothing: antialiased;
+      background: var(--warm-100); color: var(--gray-800); line-height: 1.6;
+      min-height: 100vh; min-height: 100dvh; -webkit-font-smoothing: antialiased;
     }
     body.has-nav { padding-bottom: calc(72px + var(--safe-bottom)); }
 
     header {
       background: linear-gradient(135deg, #a18072 0%, #b8977e 50%, #c4ad97 100%);
-      color: white;
-      padding: 20px 20px 16px;
-      text-align: center;
-      position: relative;
+      color: white; padding: 20px 20px 16px; text-align: center; position: relative;
     }
     header h1 { font-size: 1.5rem; font-weight: 800; letter-spacing: 0.5px; }
     header p { font-size: 0.82rem; opacity: 0.85; margin-top: 2px; }
     .header-back {
-      position: absolute;
-      left: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: rgba(255,255,255,0.2);
-      border: none;
-      color: white;
-      width: 36px;
-      height: 36px;
-      border-radius: 10px;
-      font-size: 1.2rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,0.2); border: none; color: white;
+      width: 36px; height: 36px; border-radius: 10px; font-size: 1.2rem;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
     }
     .header-back:active { background: rgba(255,255,255,0.35); }
 
     .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      background: white;
-      border-top: 1px solid var(--gray-200);
-      display: none;
-      z-index: 200;
-      padding-bottom: var(--safe-bottom);
-      box-shadow: 0 -2px 10px rgba(0,0,0,0.06);
+      position: fixed; bottom: 0; left: 0; right: 0; background: white;
+      border-top: 1px solid var(--gray-200); display: none; z-index: 200;
+      padding-bottom: var(--safe-bottom); box-shadow: 0 -2px 10px rgba(0,0,0,0.06);
     }
     .bottom-nav.visible { display: flex; }
     .nav-btn {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-      padding: 10px 4px 8px;
-      border: none;
-      background: transparent;
-      color: var(--gray-400);
-      font-size: 0.7rem;
-      font-weight: 600;
-      font-family: inherit;
-      cursor: pointer;
-      transition: color 0.2s;
-      position: relative;
+      flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 3px; padding: 10px 4px 8px; border: none; background: transparent;
+      color: var(--gray-400); font-size: 0.7rem; font-weight: 600; font-family: inherit;
+      cursor: pointer; transition: color 0.2s; position: relative;
     }
     .nav-btn .nav-icon { font-size: 1.35rem; line-height: 1; }
     .nav-btn.active { color: var(--primary); }
     .nav-btn.active::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 25%;
-      right: 25%;
-      height: 3px;
-      background: var(--primary);
-      border-radius: 0 0 3px 3px;
+      content: ''; position: absolute; top: 0; left: 25%; right: 25%;
+      height: 3px; background: var(--primary); border-radius: 0 0 3px 3px;
     }
     .nav-badge {
-      position: absolute;
-      top: 4px;
-      right: calc(50% - 20px);
-      min-width: 18px;
-      height: 18px;
-      padding: 0 5px;
-      border-radius: 9px;
-      background: var(--danger);
-      color: white;
-      font-size: 0.65rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      line-height: 1;
+      position: absolute; top: 4px; right: calc(50% - 20px);
+      min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+      background: var(--danger); color: white; font-size: 0.65rem; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; line-height: 1;
     }
 
-    .container {
-      max-width: 520px;
-      margin: 0 auto;
-      padding: 16px 14px 24px;
-    }
+    .container { max-width: 520px; margin: 0 auto; padding: 16px 14px 24px; }
+    .card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 20px; margin-bottom: 14px; }
+    .card-title { font-size: 1.05rem; font-weight: 700; color: var(--gray-800); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+    .card-title .icon { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.05rem; flex-shrink: 0; }
 
-    .card {
-      background: white;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 20px;
-      margin-bottom: 14px;
-    }
-    .card-title {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: var(--gray-800);
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .card-title .icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.05rem;
-      flex-shrink: 0;
-    }
-
-    .input-row {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-
+    .input-row { display: flex; gap: 10px; margin-bottom: 12px; }
     input, select {
-      padding: 12px 14px;
-      border: 1.5px solid var(--gray-200);
-      border-radius: 10px;
-      font-size: 16px;
-      font-family: inherit;
-      transition: border-color 0.2s, box-shadow 0.2s;
-      outline: none;
-      background: white;
-      color: var(--gray-800);
-      -webkit-appearance: none;
+      padding: 12px 14px; border: 1.5px solid var(--gray-200); border-radius: 10px;
+      font-size: 16px; font-family: inherit; transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none; background: white; color: var(--gray-800); -webkit-appearance: none;
     }
-    input:focus, select:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px var(--primary-subtle);
-    }
+    input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-subtle); }
     input::placeholder { color: var(--gray-400); }
-
     select {
       background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2378716c' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 12px center;
-      padding-right: 32px;
+      background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px;
     }
 
     .btn {
-      padding: 12px 22px;
-      border: none;
-      border-radius: 10px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.15s;
-      font-family: inherit;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      white-space: nowrap;
-      min-height: 46px;
-      -webkit-appearance: none;
+      padding: 12px 22px; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s; font-family: inherit; display: inline-flex;
+      align-items: center; justify-content: center; gap: 6px; white-space: nowrap;
+      min-height: 46px; -webkit-appearance: none;
     }
     .btn:active { transform: scale(0.97); }
     .btn-primary { background: var(--primary); color: white; }
@@ -234,32 +123,8 @@
     .btn-outline:active { background: var(--gray-100); }
     .btn-block { width: 100%; }
 
-    .tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--primary-light);
-      color: var(--primary);
-      padding: 8px 14px;
-      border-radius: 22px;
-      font-size: 0.9rem;
-      font-weight: 600;
-    }
-    .tag .remove-btn {
-      cursor: pointer;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 0.7rem;
-      background: var(--primary-subtle);
-      transition: background 0.2s;
-      border: none;
-      color: var(--primary);
-      line-height: 1;
-    }
+    .tag { display: inline-flex; align-items: center; gap: 8px; background: var(--primary-light); color: var(--primary); padding: 8px 14px; border-radius: 22px; font-size: 0.9rem; font-weight: 600; }
+    .tag .remove-btn { cursor: pointer; width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; background: var(--primary-subtle); transition: background 0.2s; border: none; color: var(--primary); line-height: 1; }
     .tag .remove-btn:active { background: rgba(161,128,114,0.25); }
 
     .members-list { display: flex; flex-wrap: wrap; gap: 10px; min-height: 40px; }
@@ -342,17 +207,10 @@
     .expense-detail-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.82rem; color: var(--gray-500); }
     .expense-detail-row .ed-amount { font-weight: 600; color: var(--gray-700); }
 
-    /* 專案列表 */
     .project-card {
-      background: white;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 18px 20px;
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      cursor: pointer;
-      transition: box-shadow 0.15s, transform 0.15s;
+      background: white; border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 18px 20px; margin-bottom: 10px; display: flex; align-items: center;
+      cursor: pointer; transition: box-shadow 0.15s, transform 0.15s;
     }
     .project-card:active { transform: scale(0.98); box-shadow: var(--shadow-md); }
     .project-card-info { flex: 1; min-width: 0; }
@@ -362,11 +220,39 @@
     .project-card-amount { font-weight: 800; color: var(--primary); font-size: 1.05rem; margin-left: 12px; flex-shrink: 0; }
     .project-delete {
       width: 34px; height: 34px; border-radius: 8px; border: none;
-      background: var(--danger-light); color: var(--danger);
-      font-size: 0.85rem; cursor: pointer; margin-left: 10px;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      background: var(--danger-light); color: var(--danger); font-size: 0.85rem;
+      cursor: pointer; margin-left: 10px; display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0;
     }
     .project-delete:active { background: #fecaca; }
+
+    .share-box {
+      display: flex; align-items: center; gap: 10px; padding: 14px 16px;
+      background: var(--primary-light); border-radius: 12px; margin-bottom: 16px;
+    }
+    .share-box .share-label { font-size: 0.82rem; color: var(--gray-500); font-weight: 600; }
+    .share-box .share-code {
+      font-size: 1.3rem; font-weight: 800; letter-spacing: 3px; color: var(--primary);
+      font-family: "SF Mono", "Fira Code", monospace;
+    }
+    .share-box .share-copy {
+      margin-left: auto; padding: 6px 14px; border: 1.5px solid var(--primary);
+      border-radius: 8px; background: white; color: var(--primary); font-size: 0.82rem;
+      font-weight: 600; cursor: pointer; font-family: inherit;
+    }
+    .share-box .share-copy:active { background: var(--primary-lighter); }
+
+    .or-divider {
+      display: flex; align-items: center; gap: 12px; margin: 16px 0; color: var(--gray-400); font-size: 0.82rem;
+    }
+    .or-divider::before, .or-divider::after { content: ''; flex: 1; height: 1px; background: var(--gray-200); }
+
+    .sync-status {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem;
+      color: var(--gray-400); margin-left: 8px;
+    }
+    .sync-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--success); }
+    .sync-dot.offline { background: var(--danger); }
 
     @media (min-width: 600px) {
       .container { padding: 24px 20px 32px; }
@@ -398,14 +284,22 @@
                onkeydown="if(event.key==='Enter') addProject()" enterkeyhint="done">
         <button class="btn btn-primary" onclick="addProject()">新增</button>
       </div>
+      <div class="or-divider">或加入朋友的專案</div>
+      <div class="input-row">
+        <input type="text" id="joinCodeInput" placeholder="輸入 6 位分享碼" maxlength="6"
+               style="flex:1; text-transform:uppercase; letter-spacing:2px; text-align:center;"
+               onkeydown="if(event.key==='Enter') joinProject()" enterkeyhint="go">
+        <button class="btn btn-outline" onclick="joinProject()">加入</button>
+      </div>
     </div>
     <div id="projectList"></div>
   </div>
 
-  <!-- 專案內容（成員/費用/結算） -->
+  <!-- 專案內容 -->
   <div id="view-detail" style="display:none;">
 
-    <!-- 成員管理 -->
+    <div id="shareCodeBox"></div>
+
     <div class="tab-content active" id="tab-members">
       <div class="card">
         <div class="card-title">
@@ -429,7 +323,6 @@
       </div>
     </div>
 
-    <!-- 費用記錄 -->
     <div class="tab-content" id="tab-expenses">
       <div class="card">
         <div class="card-title">
@@ -478,16 +371,11 @@
       <div id="expensesList"></div>
     </div>
 
-    <!-- 結算 -->
     <div class="tab-content" id="tab-settle">
       <div id="settleContent">
-        <div class="no-data">
-          <div class="icon-big">📊</div>
-          <p>新增費用後即可查看結算結果</p>
-        </div>
+        <div class="no-data"><div class="icon-big">📊</div><p>新增費用後即可查看結算結果</p></div>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -505,52 +393,40 @@
 </nav>
 
 <script>
-  let projects = [];
-  let activeProjectId = null;
+  const firebaseConfig = {
+    apiKey: "AIzaSyCCgxvVd0no3BcOrr7k6J8qCyQcfHSJC_Q",
+    authDomain: "mypay-c7210.firebaseapp.com",
+    databaseURL: "https://mypay-c7210-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId: "mypay-c7210",
+    storageBucket: "mypay-c7210.firebasestorage.app",
+    messagingSenderId: "685018136318",
+    appId: "1:685018136318:web:6749b2e72def77731aafaf"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+
+  let projectData = null;
+  let activeCode = null;
   let currentSplitMode = 'equal';
+  let activeListener = null;
 
-  function getProject() {
-    return projects.find(p => p.id === activeProjectId);
+  function getJoinedCodes() {
+    try { return JSON.parse(localStorage.getItem('mypay_codes') || '[]'); } catch (_) { return []; }
   }
-  function getMembers() { const p = getProject(); return p ? p.members : []; }
-  function getExpenses() { const p = getProject(); return p ? p.expenses : []; }
+  function saveJoinedCodes(codes) { localStorage.setItem('mypay_codes', JSON.stringify(codes)); }
 
-  // ─── 資料存取 ───
-  function saveData() {
-    localStorage.setItem('mypay_projects', JSON.stringify(projects));
-  }
-
-  function loadData() {
-    try {
-      const raw = localStorage.getItem('mypay_projects');
-      if (raw) {
-        projects = JSON.parse(raw);
-        return;
-      }
-      const oldM = localStorage.getItem('mypay_members');
-      const oldE = localStorage.getItem('mypay_expenses');
-      if (oldM || oldE) {
-        const m = oldM ? JSON.parse(oldM) : [];
-        const e = oldE ? JSON.parse(oldE) : [];
-        if (m.length > 0 || e.length > 0) {
-          projects.push({
-            id: Date.now(),
-            name: '我的旅程',
-            members: m,
-            expenses: e,
-            createdAt: new Date().toLocaleString('zh-TW')
-          });
-          saveData();
-          localStorage.removeItem('mypay_members');
-          localStorage.removeItem('mypay_expenses');
-        }
-      }
-    } catch (_) {}
+  function generateCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
   }
 
   // ─── 專案列表 ───
   function showProjectList() {
-    activeProjectId = null;
+    if (activeListener) { activeListener(); activeListener = null; }
+    activeCode = null;
+    projectData = null;
     document.getElementById('view-projects').style.display = 'block';
     document.getElementById('view-detail').style.display = 'none';
     document.getElementById('bottomNav').classList.remove('visible');
@@ -565,63 +441,87 @@
   }
 
   function renderProjectList() {
+    const codes = getJoinedCodes();
     const container = document.getElementById('projectList');
-    if (projects.length === 0) {
+    if (codes.length === 0) {
       container.innerHTML = '<div class="no-data"><div class="icon-big">📁</div><p>建立第一個專案開始分帳吧</p></div>';
       return;
     }
-    container.innerHTML = projects.slice().reverse().map(p => {
-      const total = p.expenses.reduce((s, e) => s + e.amount, 0);
-      const memberCount = p.members.length;
-      const expCount = p.expenses.length;
-      return `
-        <div class="project-card" onclick="openProject(${p.id})">
-          <div class="project-card-info">
-            <div class="project-card-name">${esc(p.name)}</div>
-            <div class="project-card-meta">${memberCount} 人 · ${expCount} 筆費用 · ${p.createdAt}</div>
-          </div>
-          ${total > 0 ? `<span class="project-card-amount">$${formatNum(total)}</span>` : ''}
-          <button class="project-delete" onclick="event.stopPropagation(); deleteProject(${p.id})" title="刪除">🗑</button>
-          <span class="project-card-arrow">›</span>
-        </div>`;
-    }).join('');
+    container.innerHTML = '<div class="hint-text">載入中...</div>';
+    const promises = codes.map(code =>
+      db.ref('projects/' + code).once('value').then(snap => ({ code, data: snap.val() }))
+    );
+    Promise.all(promises).then(results => {
+      const valid = results.filter(r => r.data);
+      if (valid.length === 0) {
+        container.innerHTML = '<div class="no-data"><div class="icon-big">📁</div><p>建立第一個專案開始分帳吧</p></div>';
+        return;
+      }
+      container.innerHTML = valid.reverse().map(({ code, data }) => {
+        const members = data.members ? Object.values(data.members) : [];
+        const expenses = data.expenses ? Object.values(data.expenses) : [];
+        const total = expenses.reduce((s, e) => s + (e.amount || 0), 0);
+        return `
+          <div class="project-card" onclick="openProject('${code}')">
+            <div class="project-card-info">
+              <div class="project-card-name">${esc(data.name)}</div>
+              <div class="project-card-meta">${members.length} 人 · ${expenses.length} 筆 · ${code}</div>
+            </div>
+            ${total > 0 ? `<span class="project-card-amount">$${formatNum(total)}</span>` : ''}
+            <button class="project-delete" onclick="event.stopPropagation(); deleteProject('${code}')" title="移除">🗑</button>
+            <span class="project-card-arrow">›</span>
+          </div>`;
+      }).join('');
+    }).catch(() => {
+      container.innerHTML = '<div class="no-data"><p>載入失敗，請檢查網路連線</p></div>';
+    });
   }
 
   function addProject() {
     const input = document.getElementById('projectNameInput');
     const name = input.value.trim();
     if (!name) return;
-    projects.push({
-      id: Date.now(),
+    const code = generateCode();
+    db.ref('projects/' + code).set({
       name,
-      members: [],
-      expenses: [],
       createdAt: new Date().toLocaleString('zh-TW')
-    });
-    input.value = '';
-    saveData();
+    }).then(() => {
+      const codes = getJoinedCodes();
+      codes.push(code);
+      saveJoinedCodes(codes);
+      input.value = '';
+      openProject(code);
+    }).catch(err => alert('建立失敗：' + err.message));
+  }
+
+  function joinProject() {
+    const input = document.getElementById('joinCodeInput');
+    const code = input.value.trim().toUpperCase();
+    if (!code || code.length !== 6) { alert('請輸入 6 位分享碼'); return; }
+    const codes = getJoinedCodes();
+    if (codes.includes(code)) { openProject(code); return; }
+    db.ref('projects/' + code).once('value').then(snap => {
+      if (!snap.exists()) { alert('找不到此專案，請確認分享碼是否正確'); return; }
+      codes.push(code);
+      saveJoinedCodes(codes);
+      input.value = '';
+      openProject(code);
+    }).catch(err => alert('加入失敗：' + err.message));
+  }
+
+  function deleteProject(code) {
+    if (!confirm('確定要從列表中移除此專案嗎？（專案資料不會被刪除，其他人仍可透過分享碼存取）')) return;
+    const codes = getJoinedCodes().filter(c => c !== code);
+    saveJoinedCodes(codes);
     renderProjectList();
   }
 
-  function deleteProject(id) {
-    const p = projects.find(x => x.id === id);
-    if (!p) return;
-    if (!confirm(`確定要刪除「${p.name}」？所有成員與費用將一併移除。`)) return;
-    projects = projects.filter(x => x.id !== id);
-    saveData();
-    renderProjectList();
-  }
-
-  function openProject(id) {
-    activeProjectId = id;
-    const p = getProject();
-    if (!p) return;
+  function openProject(code) {
+    activeCode = code;
     document.getElementById('view-projects').style.display = 'none';
     document.getElementById('view-detail').style.display = 'block';
     document.getElementById('bottomNav').classList.add('visible');
     document.body.classList.add('has-nav');
-
-    document.getElementById('headerTitle').textContent = p.name;
     document.getElementById('headerSub').style.display = 'none';
 
     let backBtn = document.getElementById('headerBackBtn');
@@ -634,19 +534,54 @@
       document.getElementById('appHeader').appendChild(backBtn);
     }
 
+    document.getElementById('shareCodeBox').innerHTML = `
+      <div class="share-box">
+        <div><div class="share-label">分享碼</div><div class="share-code">${code}</div></div>
+        <button class="share-copy" onclick="copyCode('${code}')">複製</button>
+      </div>`;
+
+    if (activeListener) activeListener();
+    activeListener = db.ref('projects/' + code).on('value', snap => {
+      projectData = snap.val() || { name: '專案', members: {}, expenses: {} };
+      document.getElementById('headerTitle').textContent = projectData.name;
+      refreshUI();
+    });
+
     switchTab('members');
+  }
+
+  function copyCode(code) {
+    navigator.clipboard.writeText(code).then(() => {
+      const btn = document.querySelector('.share-copy');
+      btn.textContent = '已複製';
+      setTimeout(() => { btn.textContent = '複製'; }, 1500);
+    }).catch(() => {
+      prompt('請手動複製分享碼：', code);
+    });
+  }
+
+  function getMembers() {
+    if (!projectData || !projectData.members) return [];
+    return Object.values(projectData.members);
+  }
+  function getExpenses() {
+    if (!projectData || !projectData.expenses) return [];
+    return Object.entries(projectData.expenses).map(([key, val]) => ({ ...val, _key: key }));
+  }
+
+  function refreshUI() {
     renderMembers();
     renderPayerSelect();
     renderExcludeGroup();
     renderCustomAmounts();
     renderExpenses();
+    const activeTab = document.querySelector('.nav-btn.active');
+    if (activeTab && activeTab.dataset.tab === 'settle') renderSettle();
   }
 
-  // ─── 分頁切換 ───
+  // ─── 分頁 ───
   function switchTab(tab) {
-    document.querySelectorAll('.nav-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.tab === tab);
-    });
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
     if (tab === 'settle') renderSettle();
@@ -655,9 +590,7 @@
 
   function setSplitMode(mode) {
     currentSplitMode = mode;
-    document.querySelectorAll('.split-toggle-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.mode === mode);
-    });
+    document.querySelectorAll('.split-toggle-btn').forEach(b => b.classList.toggle('active', b.dataset.mode === mode));
     document.getElementById('splitEqualArea').style.display = mode === 'equal' ? 'block' : 'none';
     document.getElementById('splitCustomArea').style.display = mode === 'custom' ? 'block' : 'none';
     if (mode === 'custom') renderCustomAmounts();
@@ -665,45 +598,38 @@
 
   // ─── 成員 ───
   function addMember() {
-    const p = getProject(); if (!p) return;
+    if (!activeCode) return;
     const input = document.getElementById('memberNameInput');
     const name = input.value.trim();
     if (!name) return;
-    if (p.members.includes(name)) { alert('此成員已存在'); return; }
-    p.members.push(name);
+    if (getMembers().includes(name)) { alert('此成員已存在'); return; }
+    db.ref('projects/' + activeCode + '/members').push(name);
     input.value = '';
     input.focus();
-    renderMembers(); renderPayerSelect(); renderExcludeGroup(); renderCustomAmounts();
-    saveData();
   }
 
   function removeMember(name) {
-    const p = getProject(); if (!p) return;
-    const used = p.expenses.some(e => e.payer === name);
+    if (!activeCode || !projectData) return;
+    const expenses = getExpenses();
+    const used = expenses.some(e => e.payer === name);
     if (used) {
       if (!confirm(`「${name}」已有相關費用記錄，刪除後相關費用也會一併移除，確定嗎？`)) return;
-      p.expenses = p.expenses.filter(e => e.payer !== name);
+      expenses.filter(e => e.payer === name).forEach(e => {
+        db.ref('projects/' + activeCode + '/expenses/' + e._key).remove();
+      });
     }
-    p.expenses.forEach(e => {
-      e.excluded = e.excluded.filter(n => n !== name);
-      if (e.customAmounts) delete e.customAmounts[name];
-    });
-    p.members = p.members.filter(m => m !== name);
-    renderMembers(); renderPayerSelect(); renderExcludeGroup(); renderCustomAmounts(); renderExpenses();
-    saveData();
+    if (projectData.members) {
+      Object.entries(projectData.members).forEach(([key, val]) => {
+        if (val === name) db.ref('projects/' + activeCode + '/members/' + key).remove();
+      });
+    }
   }
 
   function renderMembers() {
     const members = getMembers();
     const container = document.getElementById('membersList');
-    if (members.length === 0) {
-      container.innerHTML = '<div class="empty-hint">尚未新增任何成員</div>';
-      return;
-    }
-    container.innerHTML = members.map(name => `
-      <span class="tag">${esc(name)}
-        <button class="remove-btn" onclick="removeMember('${esc(name)}')" title="移除">✕</button>
-      </span>`).join('');
+    if (members.length === 0) { container.innerHTML = '<div class="empty-hint">尚未新增任何成員</div>'; return; }
+    container.innerHTML = members.map(n => `<span class="tag">${esc(n)}<button class="remove-btn" onclick="removeMember('${esc(n)}')" title="移除">✕</button></span>`).join('');
   }
 
   function renderPayerSelect() {
@@ -717,10 +643,7 @@
     const members = getMembers();
     const container = document.getElementById('excludeGroup');
     if (members.length === 0) { container.innerHTML = '<span class="empty-hint" style="padding:4px 0">請先新增成員</span>'; return; }
-    container.innerHTML = members.map(n => `
-      <label class="checkbox-label" onclick="toggleExclude(this)">
-        <input type="checkbox" value="${esc(n)}">${esc(n)}
-      </label>`).join('');
+    container.innerHTML = members.map(n => `<label class="checkbox-label" onclick="toggleExclude(this)"><input type="checkbox" value="${esc(n)}">${esc(n)}</label>`).join('');
   }
 
   function renderCustomAmounts() {
@@ -729,18 +652,11 @@
     const totalEl = document.getElementById('customAmountTotal');
     if (members.length === 0) { container.innerHTML = '<span class="empty-hint" style="padding:4px 0">請先新增成員</span>'; totalEl.style.display = 'none'; return; }
     totalEl.style.display = 'flex';
-    container.innerHTML = members.map(n => `
-      <div class="custom-amount-row">
-        <span class="ca-name">${esc(n)}</span>
-        <input type="number" placeholder="0" min="0" step="1" inputmode="numeric" data-member="${esc(n)}" oninput="updateCustomTotal()" enterkeyhint="next">
-      </div>`).join('');
+    container.innerHTML = members.map(n => `<div class="custom-amount-row"><span class="ca-name">${esc(n)}</span><input type="number" placeholder="0" min="0" step="1" inputmode="numeric" data-member="${esc(n)}" oninput="updateCustomTotal()" enterkeyhint="next"></div>`).join('');
     updateCustomTotal();
   }
 
-  function toggleExclude(label) {
-    setTimeout(() => { const cb = label.querySelector('input'); label.classList.toggle('checked', cb.checked); }, 0);
-  }
-
+  function toggleExclude(label) { setTimeout(() => { const cb = label.querySelector('input'); label.classList.toggle('checked', cb.checked); }, 0); }
   function updateCustomTotal() {
     let total = 0;
     document.querySelectorAll('#customAmountList input').forEach(i => { const v = parseFloat(i.value); if (v > 0) total += v; });
@@ -751,27 +667,29 @@
   function getExpenseShare(e, memberName) {
     const members = getMembers();
     if (e.splitMode === 'custom' && e.customAmounts) return e.customAmounts[memberName] || 0;
-    const parts = members.filter(p => !e.excluded.includes(p));
+    const excluded = e.excluded || [];
+    const parts = members.filter(p => !excluded.includes(p));
     if (parts.includes(memberName)) return e.amount / parts.length;
     return 0;
   }
 
   function addExpense() {
-    const p = getProject(); if (!p) return;
-    const members = p.members;
+    if (!activeCode) return;
+    const members = getMembers();
     if (members.length < 2) { alert('請先新增至少兩位成員'); return; }
     const desc = document.getElementById('expenseDesc').value.trim();
     const payer = document.getElementById('expensePayer').value;
     if (!desc) { alert('請輸入費用名稱'); return; }
     if (!payer) { alert('請選擇付款人'); return; }
 
+    let expenseData;
     if (currentSplitMode === 'equal') {
       const amount = parseFloat(document.getElementById('expenseAmount').value);
       if (!amount || amount <= 0) { alert('請輸入有效金額'); return; }
       const excluded = [];
       document.querySelectorAll('#excludeGroup input:checked').forEach(cb => excluded.push(cb.value));
       if (members.filter(m => !excluded.includes(m)).length === 0) { alert('至少需要一位成員參與分攤'); return; }
-      p.expenses.push({ id: Date.now(), desc, amount, payer, excluded, splitMode: 'equal', timestamp: new Date().toLocaleString('zh-TW') });
+      expenseData = { desc, amount, payer, excluded, splitMode: 'equal', timestamp: new Date().toLocaleString('zh-TW') };
       document.getElementById('expenseAmount').value = '';
       document.querySelectorAll('#excludeGroup input').forEach(cb => { cb.checked = false; cb.parentElement.classList.remove('checked'); });
     } else {
@@ -782,19 +700,18 @@
       });
       if (!hasAny || total <= 0) { alert('請至少填入一位成員的金額'); return; }
       const excluded = members.filter(m => !customAmounts[m]);
-      p.expenses.push({ id: Date.now(), desc, amount: total, payer, excluded, splitMode: 'custom', customAmounts, timestamp: new Date().toLocaleString('zh-TW') });
+      expenseData = { desc, amount: total, payer, excluded, splitMode: 'custom', customAmounts, timestamp: new Date().toLocaleString('zh-TW') };
       document.querySelectorAll('#customAmountList input').forEach(i => { i.value = ''; });
       updateCustomTotal();
     }
     document.getElementById('expenseDesc').value = '';
-    renderExpenses(); saveData();
+    db.ref('projects/' + activeCode + '/expenses').push(expenseData);
   }
 
-  function removeExpense(id) {
-    const p = getProject(); if (!p) return;
+  function removeExpense(key) {
+    if (!activeCode) return;
     if (!confirm('確定要刪除這筆費用嗎？')) return;
-    p.expenses = p.expenses.filter(e => e.id !== id);
-    renderExpenses(); saveData();
+    db.ref('projects/' + activeCode + '/expenses/' + key).remove();
   }
 
   function renderExpenses() {
@@ -811,29 +728,26 @@
     }
     const total = expenses.reduce((s, e) => s + e.amount, 0);
     container.innerHTML = `
-      <div class="total-banner">
-        <div><div class="total-label">費用總計</div><div class="total-value">$${formatNum(total)}</div></div>
-        <div class="total-count">共 ${expenses.length} 筆費用</div>
-      </div>
+      <div class="total-banner"><div><div class="total-label">費用總計</div><div class="total-value">$${formatNum(total)}</div></div>
+        <div class="total-count">共 ${expenses.length} 筆費用</div></div>
       ${expenses.slice().reverse().map(e => {
         const isCustom = e.splitMode === 'custom' && e.customAmounts;
-        const participants = members.filter(m => !e.excluded.includes(m));
+        const excluded = e.excluded || [];
+        const participants = members.filter(m => !excluded.includes(m));
         let detailHtml = '';
         if (isCustom) {
           detailHtml = `<div class="expense-detail-list">${Object.entries(e.customAmounts).map(([n, a]) =>
-            `<div class="expense-detail-row"><span>${esc(n)}</span><span class="ed-amount">$${formatNum(a)}</span></div>`
-          ).join('')}</div>`;
+            `<div class="expense-detail-row"><span>${esc(n)}</span><span class="ed-amount">$${formatNum(a)}</span></div>`).join('')}</div>`;
         } else {
           const pp = participants.length > 0 ? e.amount / participants.length : 0;
           detailHtml = `<div class="expense-participants">${members.map(m =>
-            e.excluded.includes(m) ? `<span class="mini-tag excluded">${esc(m)}</span>` : `<span class="mini-tag">${esc(m)} $${formatNum(pp)}</span>`
-          ).join('')}</div>`;
+            excluded.includes(m) ? `<span class="mini-tag excluded">${esc(m)}</span>` : `<span class="mini-tag">${esc(m)} $${formatNum(pp)}</span>`).join('')}</div>`;
         }
         const ml = isCustom ? '自訂' : '均分';
         return `<div class="expense-item"><div class="expense-header"><div>
           <div class="expense-title-row"><span class="expense-desc">${esc(e.desc)}</span><span class="expense-amount">$${formatNum(e.amount)}</span></div>
           <div class="expense-meta">${esc(e.payer)} 付款 · ${ml} · ${e.timestamp}</div></div>
-          <button class="btn btn-sm btn-outline" onclick="removeExpense(${e.id})" title="刪除">🗑</button></div>${detailHtml}</div>`;
+          <button class="btn btn-sm btn-outline" onclick="removeExpense('${e._key}')" title="刪除">🗑</button></div>${detailHtml}</div>`;
       }).join('')}`;
   }
 
@@ -853,7 +767,7 @@
     });
     const totalExpense = expenses.reduce((s, e) => s + e.amount, 0);
     const paidByPerson = {}; members.forEach(m => paidByPerson[m] = 0);
-    expenses.forEach(e => paidByPerson[e.payer] += e.amount);
+    expenses.forEach(e => paidByPerson[e.payer] = (paidByPerson[e.payer] || 0) + e.amount);
     const settlements = calculateSettlements(balances);
     const maxAbs = Math.max(...members.map(m => Math.abs(balances[m])), 1);
 
@@ -872,7 +786,7 @@
            <span class="settlement-to">${esc(s.to)}</span><span class="settlement-amount">$${formatNum(s.amount)}</span></div>`).join('')}
         <div class="hint-text">已自動最佳化，減少不必要的轉帳次數</div></div>
       <div class="card"><div class="card-title"><span class="icon" style="background:var(--accent-light);color:var(--accent);">📋</span>個人費用明細</div>
-        ${members.map(m => { const paid=paidByPerson[m]; const sp=expenses.reduce((s,e)=>s+getExpenseShare(e,m),0);
+        ${members.map(m => { const paid=paidByPerson[m]||0; const sp=expenses.reduce((s,e)=>s+getExpenseShare(e,m),0);
           return `<div class="detail-row"><div><div class="detail-name">${esc(m)}</div>
             <div class="detail-sub">已付 $${formatNum(paid)} · 應付 $${formatNum(sp)}</div></div>
             <div style="font-weight:800;font-size:1.05rem;color:${balances[m]>=0?'var(--success)':'var(--danger)'};">
@@ -900,18 +814,58 @@
   }
 
   function clearProjectData() {
-    const p = getProject(); if (!p) return;
-    if (!confirm(`確定要清除「${p.name}」的所有成員與費用嗎？此操作無法復原。`)) return;
-    p.members = []; p.expenses = [];
-    saveData();
-    renderMembers(); renderPayerSelect(); renderExcludeGroup(); renderCustomAmounts(); renderExpenses();
+    if (!activeCode) return;
+    if (!confirm('確定要清除此專案的所有成員與費用嗎？此操作無法復原。')) return;
+    const name = projectData ? projectData.name : '';
+    const createdAt = projectData ? projectData.createdAt : '';
+    db.ref('projects/' + activeCode).set({ name, createdAt });
     setSplitMode('equal'); switchTab('members');
+  }
+
+  function migrateOldData() {
+    const oldM = localStorage.getItem('mypay_members');
+    const oldE = localStorage.getItem('mypay_expenses');
+    const oldP = localStorage.getItem('mypay_projects');
+    if (!oldM && !oldE && !oldP) return;
+
+    let projectsToMigrate = [];
+    if (oldP) {
+      try { projectsToMigrate = JSON.parse(oldP); } catch (_) {}
+    } else if (oldM || oldE) {
+      const m = oldM ? JSON.parse(oldM) : [];
+      const e = oldE ? JSON.parse(oldE) : [];
+      if (m.length > 0 || e.length > 0) {
+        projectsToMigrate = [{ name: '我的旅程', members: m, expenses: e, createdAt: new Date().toLocaleString('zh-TW') }];
+      }
+    }
+
+    if (projectsToMigrate.length === 0) return;
+
+    const codes = getJoinedCodes();
+    projectsToMigrate.forEach(p => {
+      const code = generateCode();
+      const membersObj = {};
+      (p.members || []).forEach(m => { membersObj[db.ref().push().key] = m; });
+      const expensesObj = {};
+      (p.expenses || []).forEach(e => { expensesObj[db.ref().push().key] = e; });
+      db.ref('projects/' + code).set({
+        name: p.name,
+        members: membersObj,
+        expenses: expensesObj,
+        createdAt: p.createdAt || new Date().toLocaleString('zh-TW')
+      });
+      codes.push(code);
+    });
+    saveJoinedCodes(codes);
+    localStorage.removeItem('mypay_members');
+    localStorage.removeItem('mypay_expenses');
+    localStorage.removeItem('mypay_projects');
   }
 
   function formatNum(n) { return Number(n).toLocaleString('zh-TW', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
   function esc(str) { const d = document.createElement('div'); d.textContent = str; return d.innerHTML; }
 
-  loadData();
+  migrateOldData();
   showProjectList();
 </script>
 
