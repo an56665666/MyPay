@@ -408,7 +408,7 @@
   let projectData = null;
   let activeCode = null;
   let currentSplitMode = 'equal';
-  let activeListener = null;
+  let activeRef = null;
 
   function getJoinedCodes() {
     try { return JSON.parse(localStorage.getItem('mypay_codes') || '[]'); } catch (_) { return []; }
@@ -424,7 +424,7 @@
 
   // ─── 專案列表 ───
   function showProjectList() {
-    if (activeListener) { activeListener(); activeListener = null; }
+    if (activeRef) { activeRef.off(); activeRef = null; }
     activeCode = null;
     projectData = null;
     document.getElementById('view-projects').style.display = 'block';
@@ -540,8 +540,9 @@
         <button class="share-copy" onclick="copyCode('${code}')">複製</button>
       </div>`;
 
-    if (activeListener) activeListener();
-    activeListener = db.ref('projects/' + code).on('value', snap => {
+    if (activeRef) activeRef.off();
+    activeRef = db.ref('projects/' + code);
+    activeRef.on('value', snap => {
       projectData = snap.val() || { name: '專案', members: {}, expenses: {} };
       document.getElementById('headerTitle').textContent = projectData.name;
       refreshUI();
